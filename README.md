@@ -3,7 +3,7 @@
 Add badge to your `.png` files.
 
 Required Input Variables
-- `$AC_ICONS_PATH`: Specifies path of icon files. For example : `$AC_PROJECT_PATH/MyProject/Assets.xcassets/AppIcon.appiconset`
+- `$AC_ICONS_PATH`: Specifies path of icon files. For example : `$AC_REPOSITORY_DIR/MyProject/Assets.xcassets/AppIcon.appiconset`
 
 Optional Input Variables
 - `$AC_BADGE_TEXT`: Badge text. `Beta` by default
