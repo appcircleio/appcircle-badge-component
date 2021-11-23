@@ -8,6 +8,13 @@ echo "AC_ICONS_PATH is not provided. Skipping step."
 exit 0
 fi
 
+OS=$(uname -s)
+if [ "${OS}" == "Linux" ]; then
+    apt-get -y install imagemagick
+    elif [ "${OS}" == "Darwin" ]; then
+    brew install imagemagick
+fi
+
 BADGE_TEXT="${AC_BADGE_TEXT:-Beta}"
 BADGE_VERSION="${AC_BADGE_VERSION:-1.0}"
 BADGE_BACKGROUND_COLOR="${AC_BADGE_BGCOLOR:-orange}"
