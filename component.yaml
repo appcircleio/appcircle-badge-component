@@ -1,4 +1,4 @@
-platform: iOS
+platform: Common
 buildPlatform:
 displayName: Add badge onto your app icon
 inputs:
