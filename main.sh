@@ -4,15 +4,28 @@ set -e
 
 if [ -z "$AC_ICONS_PATH" ]
 then
-echo "AC_ICONS_PATH is not provided. Skipping step."
-exit 0
+    echo "AC_ICONS_PATH is not provided."
+    exit 1
+fi
+AC_ICONS_PATH="$AC_REPOSITORY_DIR/$AC_ICONS_PATH"
+
+if [ ! -d $AC_ICONS_PATH ]
+then
+    echo "Directory $AC_ICONS_PATH DOES NOT exists."
+    exit 1
 fi
 
-OS=$(uname -s)
-if [ "${OS}" == "Linux" ]; then
-    apt-get -y install imagemagick
-    elif [ "${OS}" == "Darwin" ]; then
-    brew install imagemagick
+if ! command -v convert &> /dev/null
+then
+    echo "Installing Imagemagick"
+    OS=$(uname -s)
+    if [ "${OS}" == "Linux" ]; then
+        apt-get -y install imagemagick
+        elif [ "${OS}" == "Darwin" ]; then
+        brew install imagemagick
+    fi
+else
+    echo "Imagemagick already installed"
 fi
 
 BADGE_TEXT="${AC_BADGE_TEXT:-Beta}"
@@ -63,11 +76,11 @@ function processIcon() {
     convert -background $BADGE_BACKGROUND_COLOR -size ${badge_width}x${badge_height} -pointsize $badge_point_size -fill $BADGE_TEXT_COLOR -gravity center caption:$BADGE_TEXT $AC_TMP_BADGE
     convert $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
     convert ${base_file} $AC_TMP_BADGE -gravity SouthWest -composite ${base_file}
-
+    
     if [ $? != 0 ];then
         echo "convert failed."
     fi
-
+    
     rm $AC_TMP_BLURRED
     rm $AC_TMP_LABELBASE
     rm $AC_TMP_LABELS
@@ -76,8 +89,18 @@ function processIcon() {
     rm $AC_TMP_BADGE
 }
 
-for f in $AC_ICONS_PATH/*.png
+for f in  `find  $AC_ICONS_PATH -name '*.png'`
 do
-	echo "Adding badge to - $f"
+    echo "Adding badge to - $f"
     processIcon "$f"
 done
+
+# Remove ic_launcher xml files to force badged icons
+if [ "${OS}" == "Linux" ]; then
+    echo "Removing adaptive icons to force badged icons"
+    for f in  `find  $AC_ICONS_PATH -name 'ic_launcher*.xml'`
+    do
+        echo "Removing - $f"
+        rm $f
+    done
+fi

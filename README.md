@@ -3,7 +3,19 @@
 Add badge to your `.png` files.
 
 Required Input Variables
-- `$AC_ICONS_PATH`: Specifies path of icon files. For example : `$AC_REPOSITORY_DIR/MyProject/Assets.xcassets/AppIcon.appiconset`
+- `$AC_ICONS_PATH`: Specifies path of icon files. 
+
+For example:
+
+- iOS Native: `MyProject/Assets.xcassets/AppIcon.appiconset`
+- Android Native `app/src/main/res/`
+- React Native iOS: `ios//MyProject/Assets.xcassets/AppIcon.appiconset/`
+- React Native Android: `android/app/src/main/res/`
+- Flutter iOS: `ios/Runner/Assets.xcassets/AppIcon.appiconset`
+- Flutter Android: `android/app/src/main/res/`
+- Smartface iOS: `images/iOS/AppIcon.appiconset`
+- Smartface Android: `images/Android`
+
 
 Optional Input Variables
 - `$AC_BADGE_TEXT`: Badge text. `Beta` by default

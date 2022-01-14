@@ -6,12 +6,12 @@ inputs:
   defaultValue: "$AC_ICONS_PATH"
   isRequired: true
   title: Icons path
-  description: "Specifies path of icon files. For example : $AC_REPOSITORY_DIR/MyProject/Assets.xcassets/AppIcon.appiconset"
+  description: "Specifies path of icon files. For example : MyProject/Assets.xcassets/AppIcon.appiconset"
 - key: "AC_BADGE_TEXT"
   defaultValue: "$AC_BADGE_TEXT"
   isRequired: false
   title: Badge text
-  description: "Text that appears on the right corner. Beta by defualt"
+  description: "Text that appears on the right corner. Beta by default"
   defaultValue: "Beta"
 - key: "AC_BADGE_VERSION"
   defaultValue: "$AC_BADGE_VERSION"
