@@ -1,6 +1,7 @@
 platform: Common
 buildPlatform:
 displayName: Add badge onto your app icon
+description: "Install Imagemagick and add badge onto your icons."
 inputs:
 - key: "AC_ICONS_PATH"
   defaultValue: "$AC_ICONS_PATH"
@@ -11,12 +12,12 @@ inputs:
   defaultValue: "Beta"
   isRequired: false
   title: Badge text
-  description: "Text that appears on the right corner. Beta by defualt"
+  description: "Text that appears on the right corner."
 - key: "AC_BADGE_VERSION"
   defaultValue: "1.0"
   isRequired: false
   title: Version Number
-  description: "Version or build number that will appear at the bottom.
+  description: "Version or build number that will appear at the bottom."
 - key: "AC_BADGE_BGCOLOR"
   defaultValue: "orange"
   isRequired: false
