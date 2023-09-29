@@ -16,6 +16,7 @@ For example:
 - Smartface iOS: `images/iOS/AppIcon.appiconset`
 - Smartface Android: `images/Android`
 
+**Note:** The glob pattern can be used to select multiple image paths. For example: `app/src/main/res/mipmap*` adds badges all pngs under mipmap in this file path.
 
 Optional Input Variables
 - `$AC_BADGE_TEXT`: Badge text. `Beta` by default
