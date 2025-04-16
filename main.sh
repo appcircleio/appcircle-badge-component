@@ -73,9 +73,13 @@ function processIcon() {
     badge_point_size=$((($BADGE_FONT_SIZE * $width) / 100))
 
     $IM_CMD ${base_file} -blur 10x8 $AC_TMP_BLURRED
-    $IM_CMD -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED
-    $IM_CMD $AC_TMP_BLURRED $AC_TMP_MASKED -alpha off -compose CopyOpacity -composite $AC_TMP_MASKED
-    $IM_CMD "${base_file}" $AC_TMP_MASKED -compose over -composite $AC_TMP_TEMP
+    if [[ "$IM_CMD" == "magick" ]]; then
+        $IM_CMD -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED
+        $IM_CMD $AC_TMP_BLURRED $AC_TMP_MASKED -alpha off -compose CopyOpacity -composite $AC_TMP_MASKED
+        $IM_CMD "${base_file}" $AC_TMP_MASKED -compose over -composite $AC_TMP_TEMP
+    else
+        $IM_CMD $AC_TMP_BLURRED -gamma 0 -fill white -draw "rectangle 0,$band_position,$width,$height" $AC_TMP_MASKED
+    fi
     $IM_CMD -size ${width}x${band_height} xc:none -fill 'rgba(0,0,0,0.2)' -draw "rectangle 0,0,$width,$band_height" $AC_TMP_LABELBASE
     $IM_CMD -background none -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
     $IM_CMD ${base_file} $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
