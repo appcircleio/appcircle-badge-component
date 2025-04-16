@@ -1,17 +1,14 @@
 #!/bin/bash
 set -e
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 # Modified version of https://github.com/HDB-Li/LLIconVersioning
 
-if [ -z "$AC_ICONS_PATH" ]
-then
-    echo "AC_ICONS_PATH is not provided."
-    exit 1
-fi
 AC_ICONS_PATH="$AC_REPOSITORY_DIR/$AC_ICONS_PATH"
-
-if [ ! -d $AC_ICONS_PATH ]
-then
-    echo "Directory $AC_ICONS_PATH DOES NOT exists."
+if compgen -G "$AC_ICONS_PATH" > /dev/null; then
+    echo "Found icon directories matching: $AC_ICONS_PATH"
+else
+    echo "No matching files or directories for: $AC_ICONS_PATH"
     exit 1
 fi
 
@@ -32,7 +29,7 @@ BADGE_TEXT="${AC_BADGE_TEXT:-Beta}"
 BADGE_VERSION="${AC_BADGE_VERSION:-1.0}"
 BADGE_BACKGROUND_COLOR="${AC_BADGE_BGCOLOR:-orange}"
 BADGE_TEXT_COLOR="${AC_BADGE_TEXTCOLOR:-white}"
-BADGE_DISTANCE_FROM_CENTER=$(( ${AC_BADGE_DISTANCE_FROM_CENTER:-15} ))
+BADGE_CORNER_SHIFT=$(( ${AC_BADGE_CORNER_SHIFT:-5} ))
 
 BADGE_FONT_SIZE=15
 BADGE_HEIGHT=20
@@ -45,7 +42,7 @@ echo "AC_BADGE_TEXT: $BADGE_TEXT"
 echo "AC_BADGE_VERSION: $BADGE_VERSION"
 echo "AC_BADGE_BGCOLOR: $BADGE_BACKGROUND_COLOR"
 echo "AC_BADGE_TEXTCOLOR: $BADGE_TEXT_COLOR"
-echo "AC_BADGE_DISTANCE_FROM_CENTER: $BADGE_DISTANCE_FROM_CENTER"
+echo "AC_BADGE_CORNER_SHIFT: $BADGE_CORNER_SHIFT"
 
 # Temp images
 AC_TMP_BLURRED="ac_tmp_blurred.png"
@@ -62,8 +59,8 @@ function processIcon() {
     cd "$BASE_FLODER_PATH"
     width=`identify -format %w ${base_file}`
     height=`identify -format %h ${base_file}`
-    badge_width_offset=$(( width / $BADGE_DISTANCE_FROM_CENTER ))
-    badge_height_offset=$(( height / $BADGE_DISTANCE_FROM_CENTER ))
+    badge_width_offset=$(( ($width * $BADGE_CORNER_SHIFT) / 100 ))
+    badge_height_offset=$(( ($height * $BADGE_CORNER_SHIFT) / 100 ))
     band_height=$((($height * $ICON_INFO_HEIGHT) / 100))
     band_position=$(($height - $band_height))
     text_offset=$(awk "BEGIN {print int(1/5 * $band_position + 0.5)}")
@@ -72,7 +69,6 @@ function processIcon() {
     badge_width=$((($width * 200) / 100))
     badge_height=$((($height * $BADGE_HEIGHT) / 100))
     badge_point_size=$((($BADGE_FONT_SIZE * $width) / 100))
-    target_file=`basename $base_file`
 
     magick ${base_file} -blur 10x8 $AC_TMP_BLURRED
     magick -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED

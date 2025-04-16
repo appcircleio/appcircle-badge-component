@@ -23,7 +23,7 @@ Optional Input Variables
 - `$AC_BADGE_VERSION`: Version or build number that will appear at the bottom. **TIP**: You can use "\n" in your string for a new line. `1.0` by default
 - `$AC_BADGE_BGCOLOR`: Badge background color. You can use full color name (blue,orange,...), hex codes(#0000FF,#FFA500,...) or rgb values(rgb(0,0,255),rgb(255,165,0),...) `orange` by default
 - `$AC_BADGE_TEXTCOLOR`: Badge version text color. You can use full color name (blue,orange,...), hex codes(#0000FF,#FFA500,...) or rgb values(rgb(0,0,255),rgb(255,165,0),...) `white` by default
-- `$AC_BADGE_DISTANCE_FROM_CENTER`: This value defines the badge's distance from the center as a percentage of the image width/height.
+- `$AC_BADGE_CORNER_SHIFT`: This value defines how much the top-right badge should shift toward the bottom-left, based on a percentage of the image dimensions. The default value is `5`.
 
 Example
 ---
