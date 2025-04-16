@@ -12,17 +12,19 @@ else
     exit 1
 fi
 
-if ! command -v convert &> /dev/null
-then
-    echo "Installing Imagemagick"
-    OS=$(uname -s)
-    if [ "${OS}" == "Linux" ]; then
-        apt-get -y install imagemagick
-        elif [ "${OS}" == "Darwin" ]; then
-        brew install imagemagick
-    fi
+if ! command -v convert &> /dev/null && ! command -v magick &> /dev/null; then
+    echo "Installing ImageMagick..."
+    case "$(uname -s)" in
+        Linux)  apt-get -y install imagemagick ;;
+        Darwin) brew install imagemagick ;;
+        *)      echo "Unsupported OS" && exit 1 ;;
+    esac
+fi
+
+if command -v magickl &> /dev/null; then
+    IM_CMD="magick"
 else
-    echo "Imagemagick already installed"
+    IM_CMD="convert"
 fi
 
 BADGE_TEXT="${AC_BADGE_TEXT:-Beta}"
@@ -70,21 +72,21 @@ function processIcon() {
     badge_height=$((($height * $BADGE_HEIGHT) / 100))
     badge_point_size=$((($BADGE_FONT_SIZE * $width) / 100))
 
-    magick ${base_file} -blur 10x8 $AC_TMP_BLURRED
-    magick -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED
-    magick $AC_TMP_BLURRED $AC_TMP_MASKED -alpha off -compose CopyOpacity -composite $AC_TMP_MASKED
-    magick "${base_file}" $AC_TMP_MASKED -compose over -composite $AC_TMP_TEMP
-    magick -size ${width}x${band_height} xc:none -fill 'rgba(0,0,0,0.2)' -draw "rectangle 0,0,$width,$band_height" $AC_TMP_LABELBASE
-    magick -background none -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
-    magick ${base_file} $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
-    magick $AC_TMP_TEMP $AC_TMP_LABELBASE -geometry +0+$band_position -composite $AC_TMP_LABELS -geometry +0+$text_position -geometry +${w}-${h} -composite "${base_file}"
-    magick -size ${badge_width}x${badge_height} xc:$BADGE_BACKGROUND_COLOR $AC_TMP_BADGE_BG
-    magick $AC_TMP_BADGE_BG -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
-    magick $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
-    magick $base_file $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite $base_file
+    $IM_CMD ${base_file} -blur 10x8 $AC_TMP_BLURRED
+    $IM_CMD -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED
+    $IM_CMD $AC_TMP_BLURRED $AC_TMP_MASKED -alpha off -compose CopyOpacity -composite $AC_TMP_MASKED
+    $IM_CMD "${base_file}" $AC_TMP_MASKED -compose over -composite $AC_TMP_TEMP
+    $IM_CMD -size ${width}x${band_height} xc:none -fill 'rgba(0,0,0,0.2)' -draw "rectangle 0,0,$width,$band_height" $AC_TMP_LABELBASE
+    $IM_CMD -background none -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
+    $IM_CMD ${base_file} $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
+    $IM_CMD $AC_TMP_TEMP $AC_TMP_LABELBASE -geometry +0+$band_position -composite $AC_TMP_LABELS -geometry +0+$text_position -geometry +${w}-${h} -composite "${base_file}"
+    $IM_CMD -size ${badge_width}x${badge_height} xc:$BADGE_BACKGROUND_COLOR $AC_TMP_BADGE_BG
+    $IM_CMD $AC_TMP_BADGE_BG -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
+    $IM_CMD $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
+    $IM_CMD $base_file $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite $base_file
 
     if [ $? != 0 ];then
-        echo "convert failed."
+        echo "The imagemagick command failed."
     fi
     
     rm $AC_TMP_BLURRED

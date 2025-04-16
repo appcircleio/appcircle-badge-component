@@ -31,7 +31,7 @@ inputs:
 - key: "AC_BADGE_CORNER_SHIFT"
   defaultValue: "5"
   isRequired: false
-  title: Distance from center
+  title: Badge Corner Shift
   description: "This value defines how much the top-right badge should shift toward the bottom-left, based on a percentage of the image dimensions. The default value is `5`."
 processFilename: bash
 processArguments: '%AC_STEP_TEMP%/main.sh'
