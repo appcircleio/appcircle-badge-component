@@ -13,15 +13,6 @@ else
     exit 1
 fi
 
-if ! command -v convert &> /dev/null && ! command -v magick &> /dev/null; then
-    echo "Installing ImageMagick..."
-    case "$(uname -s)" in
-        Linux)  apt-get -y install imagemagick ;;
-        Darwin) brew install imagemagick ;;
-        *)      echo "Unsupported OS" && exit 1 ;;
-    esac
-fi
-
 if command -v magick &> /dev/null; then
     IM_CMD="magick"
 else
