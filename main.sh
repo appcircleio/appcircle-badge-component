@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
 # Modified version of https://github.com/HDB-Li/LLIconVersioning
+
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 
 AC_ICONS_PATH="$AC_REPOSITORY_DIR/$AC_ICONS_PATH"
 if compgen -G "$AC_ICONS_PATH" > /dev/null; then
@@ -21,7 +22,7 @@ if ! command -v convert &> /dev/null && ! command -v magick &> /dev/null; then
     esac
 fi
 
-if command -v magickl &> /dev/null; then
+if command -v magick &> /dev/null; then
     IM_CMD="magick"
 else
     IM_CMD="convert"
