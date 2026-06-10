@@ -19,6 +19,44 @@ else
     IM_CMD="convert"
 fi
 
+# Newer Homebrew ImageMagick builds on macOS (e.g. 7.1.2-x on macOS Tahoe 26)
+# are compiled without fontconfig and ship without a populated type.xml, so
+# `-list font` is empty and there is no default font. Any text rendering
+# (caption:/-annotate) then fails with: unable to read font `'.
+# Passing an explicit font file path makes the step work regardless of the
+# ImageMagick version installed on the runner.
+FONT_ARGS=()
+resolve_font() {
+    # If ImageMagick can already enumerate fonts, let it use its default.
+    if $IM_CMD -list font 2>/dev/null | grep -q 'Font:'; then
+        return
+    fi
+
+    local candidates=(
+        "/System/Library/Fonts/Supplemental/Arial.ttf"
+        "/Library/Fonts/Arial.ttf"
+        "/System/Library/Fonts/Supplemental/Verdana.ttf"
+        "/System/Library/Fonts/Helvetica.ttc"
+        "/System/Library/Fonts/SFNSDisplay.ttf"
+        "/System/Library/Fonts/SFNS.ttf"
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"
+    )
+
+    local f
+    for f in "${candidates[@]}"; do
+        if [[ -f "$f" ]]; then
+            FONT_ARGS=(-font "$f")
+            echo "Using font: $f"
+            return
+        fi
+    done
+
+    echo "Warning: no usable font file found; relying on ImageMagick default font."
+}
+
+resolve_font
+
 BADGE_TEXT="${AC_BADGE_TEXT:-Beta}"
 BADGE_VERSION="${AC_BADGE_VERSION:-1.0}"
 BADGE_BACKGROUND_COLOR="${AC_BADGE_BGCOLOR:-orange}"
@@ -73,11 +111,11 @@ function processIcon() {
         $IM_CMD $AC_TMP_BLURRED -gamma 0 -fill white -draw "rectangle 0,$band_position,$width,$height" $AC_TMP_MASKED
     fi
     $IM_CMD -size ${width}x${band_height} xc:none -fill 'rgba(0,0,0,0.2)' -draw "rectangle 0,0,$width,$band_height" $AC_TMP_LABELBASE
-    $IM_CMD -background none -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
+    $IM_CMD -background none "${FONT_ARGS[@]}" -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
     $IM_CMD ${base_file} $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
     $IM_CMD $AC_TMP_TEMP $AC_TMP_LABELBASE -geometry +0+$band_position -composite $AC_TMP_LABELS -geometry +0+$text_position -geometry +${w}-${h} -composite "${base_file}"
     $IM_CMD -size ${badge_width}x${badge_height} xc:$BADGE_BACKGROUND_COLOR $AC_TMP_BADGE_BG
-    $IM_CMD $AC_TMP_BADGE_BG -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
+    $IM_CMD $AC_TMP_BADGE_BG "${FONT_ARGS[@]}" -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
     $IM_CMD $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
     $IM_CMD $base_file $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite $base_file
 
