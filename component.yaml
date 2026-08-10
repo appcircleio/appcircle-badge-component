@@ -33,6 +33,11 @@ inputs:
   isRequired: false
   title: Badge Corner Shift
   description: "This value defines how much the top-right badge should shift toward the bottom-left, based on a percentage of the image dimensions. The default value is `5`."
+- key: "AC_BADGE_FORCE_LEGACY"
+  defaultValue: "true"
+  isRequired: false
+  title: Force Legacy Icons for Vector-Only Adaptive Icons
+  description: "Only used when an adaptive icon foreground exists solely as a vector drawable XML (no png/webp variants), which cannot be badged. When `true` (default), the adaptive ic_launcher*.xml files under mipmap directories are removed so the badged legacy icons are shown on device (may render with boxed corners on modern launchers). Set to `false` to keep the adaptive icons untouched; the badge will then not be visible on API 26+ launchers."
 processFilename: bash
 processArguments: '%AC_STEP_TEMP%/main.sh'
 files:
