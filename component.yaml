@@ -37,7 +37,7 @@ inputs:
   defaultValue: "true"
   isRequired: false
   title: Force Legacy Icons for Vector-Only Adaptive Icons
-  description: "Only used when an adaptive icon foreground exists solely as a vector drawable XML (no png/webp variants), which cannot be badged. When `true` (default), the adaptive ic_launcher*.xml files under mipmap directories are removed so the badged legacy icons are shown on device (may render with boxed corners on modern launchers). Set to `false` to keep the adaptive icons untouched; the badge will then not be visible on API 26+ launchers."
+  description: "Applies only to vector-only adaptive icons, which cannot be badged. When `true` (default), the adaptive `ic_launcher*.xml` files are removed so the badged legacy icons are used. Set to `false` to keep them; the badge is then not visible on API 26+ launchers."
 processFilename: bash
 processArguments: '%AC_STEP_TEMP%/main.sh'
 files:
