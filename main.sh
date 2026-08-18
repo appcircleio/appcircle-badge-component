@@ -6,7 +6,10 @@ export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
 AC_ICONS_PATH="$AC_REPOSITORY_DIR/$AC_ICONS_PATH"
-if compgen -G "$AC_ICONS_PATH" > /dev/null; then
+# Expand the glob once into an array so paths with spaces survive intact.
+ICON_ROOTS=()
+while IFS= read -r p; do ICON_ROOTS+=("$p"); done < <(compgen -G "$AC_ICONS_PATH")
+if [ ${#ICON_ROOTS[@]} -gt 0 ]; then
     echo "Found icon directories matching: $AC_ICONS_PATH"
 else
     echo "WARNING: No files or directories matched the icons glob."
@@ -88,13 +91,15 @@ AC_TMP_ALPHA="ac_tmp_alpha.png"
 
 # processIcon <file> [clip_to_alpha]
 # clip_to_alpha=true: clip badge to the icon silhouette (false for adaptive foregrounds)
-function processIcon() {
+# Body runs in a subshell so the cd below never leaks into the caller.
+function processIcon() (
     base_file=$1
     clip_to_alpha=${2:-true}
-    BASE_FLODER_PATH=`dirname $base_file`
+    BASE_FLODER_PATH=$(dirname "$base_file")
     cd "$BASE_FLODER_PATH"
-    width=`identify -format %w ${base_file}`
-    height=`identify -format %h ${base_file}`
+    base_file=$(basename "$base_file")
+    width=$(identify -format %w "$base_file")
+    height=$(identify -format %h "$base_file")
     badge_width_offset=$(( ($width * $BADGE_CORNER_SHIFT) / 100 ))
     badge_height_offset=$(( ($height * $BADGE_CORNER_SHIFT) / 100 ))
     band_height=$((($height * $ICON_INFO_HEIGHT) / 100))
@@ -113,7 +118,7 @@ function processIcon() {
         $IM_CMD "$base_file" -alpha extract $AC_TMP_ALPHA
     fi
 
-    $IM_CMD ${base_file} -blur 10x8 $AC_TMP_BLURRED
+    $IM_CMD "$base_file" -blur 10x8 $AC_TMP_BLURRED
     if [[ "$IM_CMD" == "magick" ]]; then
         $IM_CMD -size ${width}x${height} xc:black -fill white -draw "rectangle 0,$band_position $width,$height" $AC_TMP_MASKED
         $IM_CMD $AC_TMP_BLURRED $AC_TMP_MASKED -alpha off -compose CopyOpacity -composite $AC_TMP_MASKED
@@ -123,12 +128,12 @@ function processIcon() {
     fi
     $IM_CMD -size ${width}x${band_height} xc:none -fill 'rgba(0,0,0,0.2)' -draw "rectangle 0,0,$width,$band_height" $AC_TMP_LABELBASE
     $IM_CMD -background none "${FONT_ARGS[@]}" -size ${width}x${band_height} -pointsize $point_size -fill $BADGE_TEXT_COLOR -gravity center -gravity South caption:"$BADGE_VERSION" $AC_TMP_LABELS
-    $IM_CMD ${base_file} $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
+    $IM_CMD "$base_file" $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
     $IM_CMD $AC_TMP_TEMP $AC_TMP_LABELBASE -geometry +0+$band_position -composite $AC_TMP_LABELS -geometry +0+$text_position -composite "${base_file}"
     $IM_CMD -size ${badge_width}x${badge_height} xc:$BADGE_BACKGROUND_COLOR $AC_TMP_BADGE_BG
     $IM_CMD $AC_TMP_BADGE_BG "${FONT_ARGS[@]}" -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
     $IM_CMD $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
-    $IM_CMD $base_file $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite $base_file
+    $IM_CMD "$base_file" $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite "$base_file"
 
     if [ "$clip_to_alpha" != "false" ]; then
         $IM_CMD "$base_file" $AC_TMP_ALPHA -alpha off -compose CopyOpacity -composite "$base_file"
@@ -146,7 +151,7 @@ function processIcon() {
     rm $AC_TMP_TEMP
     rm $AC_TMP_BADGE
     rm $AC_TMP_BADGE_BG
-}
+)
 
 # Badge only the 66/108 safe zone of an adaptive foreground layer.
 function processAdaptiveForeground() {
@@ -193,14 +198,18 @@ list_contains() {
     printf '%s\n' "$1" | grep -Fqx -- "$2"
 }
 
-ICON_FILES=$(find $AC_ICONS_PATH -type f \( -name '*.png' -o -name '*.webp' \) 2>/dev/null | sort -u)
-ADAPTIVE_XMLS=$(find $AC_ICONS_PATH -type f -path '*mipmap-anydpi*' -name 'ic_launcher*.xml' 2>/dev/null | sort -u)
+ICON_FILES=()
+while IFS= read -r f; do ICON_FILES+=("$f"); done \
+    < <(find "${ICON_ROOTS[@]}" -type f \( -name '*.png' -o -name '*.webp' \) 2>/dev/null | sort -u)
+ADAPTIVE_XMLS=()
+while IFS= read -r f; do ADAPTIVE_XMLS+=("$f"); done \
+    < <(find "${ICON_ROOTS[@]}" -type f -path '*mipmap-anydpi*' -name 'ic_launcher*.xml' 2>/dev/null | sort -u)
 
-if [ -z "$ICON_FILES" ] && [ -z "$ADAPTIVE_XMLS" ]; then
+if [ ${#ICON_FILES[@]} -eq 0 ] && [ ${#ADAPTIVE_XMLS[@]} -eq 0 ]; then
     echo "WARNING: No icon files (*.png / *.webp) or adaptive icon XMLs were found."
     echo "WARNING:   Resolved glob: $AC_ICONS_PATH"
     echo "WARNING:   Searched locations:"
-    compgen -G "$AC_ICONS_PATH" | while read -r p; do echo "WARNING:     $p"; done
+    for p in "${ICON_ROOTS[@]}"; do echo "WARNING:     $p"; done
     echo "WARNING: Nothing to badge. Check the AC_ICONS_PATH input."
     exit 0
 fi
@@ -210,7 +219,7 @@ SKIP_FILES=""        # adaptive background rasters: never badge them
 FALLBACK_ROOTS=""    # res roots whose foreground is vector-only
 TOTAL_BADGED=0
 
-for xml in $ADAPTIVE_XMLS; do
+for xml in "${ADAPTIVE_XMLS[@]}"; do
     echo "Found adaptive icon: $xml"
     res_root=$(dirname "$(dirname "$xml")")
     fg_refs=$(get_adaptive_layer_refs "$xml" foreground)
@@ -223,9 +232,11 @@ for xml in $ADAPTIVE_XMLS; do
 
     for ref in $fg_refs; do
         case "$ref" in */*) ;; *) continue ;; esac
-        rasters=$(resolve_layer_rasters "$res_root" "$ref")
-        if [ -n "$rasters" ]; then
-            for f in $rasters; do
+        rasters=()
+        while IFS= read -r f; do [ -n "$f" ] && rasters+=("$f"); done \
+            < <(resolve_layer_rasters "$res_root" "$ref")
+        if [ ${#rasters[@]} -gt 0 ]; then
+            for f in "${rasters[@]}"; do
                 if list_contains "$PROCESSED_FILES" "$f"; then
                     continue
                 fi
@@ -257,16 +268,17 @@ $res_root"
     # Never badge background layers.
     for ref in $bg_refs; do
         case "$ref" in */*) ;; *) continue ;; esac
-        for f in $(resolve_layer_rasters "$res_root" "$ref"); do
+        while IFS= read -r f; do
+            [ -z "$f" ] && continue
             if ! list_contains "$SKIP_FILES" "$f"; then
                 SKIP_FILES="$SKIP_FILES
 $f"
             fi
-        done
+        done < <(resolve_layer_rasters "$res_root" "$ref")
     done
 done
 
-for f in $ICON_FILES; do
+for f in "${ICON_FILES[@]}"; do
     if list_contains "$PROCESSED_FILES" "$f"; then
         continue
     fi
@@ -286,13 +298,14 @@ if [ -n "$(printf '%s' "$FALLBACK_ROOTS" | tr -d '[:space:]')" ]; then
         echo "WARNING: files under mipmap directories so the badged legacy icons are used."
         echo "WARNING: Modern launchers may render these with white/boxed corners."
         echo "WARNING: Set AC_BADGE_FORCE_LEGACY=false to keep the adaptive icons instead."
-        for root in $(printf '%s\n' "$FALLBACK_ROOTS" | sort -u); do
+        while IFS= read -r root; do
             [ -z "$root" ] && continue
-            for f in $(find "$root" -type f -path '*/mipmap*/*' -name 'ic_launcher*.xml' 2>/dev/null); do
+            while IFS= read -r f; do
+                [ -z "$f" ] && continue
                 echo "Removing - $f"
                 rm "$f"
-            done
-        done
+            done < <(find "$root" -type f -path '*/mipmap*/*' -name 'ic_launcher*.xml' 2>/dev/null)
+        done < <(printf '%s\n' "$FALLBACK_ROOTS" | sort -u)
     else
         echo "WARNING: AC_BADGE_FORCE_LEGACY=false - keeping adaptive icons untouched."
         echo "WARNING: The badge will NOT be visible on API 26+ device launchers for this icon."
