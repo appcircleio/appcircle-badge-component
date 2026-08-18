@@ -65,8 +65,9 @@ BADGE_TEXT_COLOR="${AC_BADGE_TEXTCOLOR:-white}"
 BADGE_CORNER_SHIFT=$(( ${AC_BADGE_CORNER_SHIFT:-5} ))
 BADGE_FORCE_LEGACY="${AC_BADGE_FORCE_LEGACY:-true}"
 
-BADGE_FONT_SIZE=15
 BADGE_HEIGHT=20
+BADGE_TEXT_MAX_WIDTH=60
+BADGE_TEXT_MAX_HEIGHT=78
 
 # Bottom app information parameters
 ICON_INFO_FONT_SIZE=13
@@ -87,6 +88,7 @@ AC_TMP_LABELS="ac_tmp_labels.png"
 AC_TMP_TEMP="ac_tmp_temp.png"
 AC_TMP_BADGE="ac_tmp_badge.png"
 AC_TMP_BADGE_BG="ac_tmp_badge_bg.png"
+AC_TMP_BADGE_TXT="ac_tmp_badge_txt.png"
 AC_TMP_ALPHA="ac_tmp_alpha.png"
 
 # processIcon <file> [clip_to_alpha]
@@ -109,10 +111,12 @@ function processIcon() (
     point_size=$((($ICON_INFO_FONT_SIZE * $width) / 100))
     badge_width=$((($width * 200) / 100))
     badge_height=$((($height * $BADGE_HEIGHT) / 100))
-    badge_point_size=$((($BADGE_FONT_SIZE * $width) / 100))
-    # avoid pointsize 0 on tiny inputs
+    badge_text_width=$((($width * $BADGE_TEXT_MAX_WIDTH) / 100))
+    badge_text_height=$((($badge_height * $BADGE_TEXT_MAX_HEIGHT) / 100))
+    # avoid zero-sized boxes on tiny inputs
     if [ "$point_size" -lt 1 ]; then point_size=1; fi
-    if [ "$badge_point_size" -lt 1 ]; then badge_point_size=1; fi
+    if [ "$badge_text_width" -lt 1 ]; then badge_text_width=1; fi
+    if [ "$badge_text_height" -lt 1 ]; then badge_text_height=1; fi
 
     if [ "$clip_to_alpha" != "false" ]; then
         $IM_CMD "$base_file" -alpha extract $AC_TMP_ALPHA
@@ -131,7 +135,8 @@ function processIcon() (
     $IM_CMD "$base_file" $AC_TMP_BLURRED $AC_TMP_MASKED -composite $AC_TMP_TEMP
     $IM_CMD $AC_TMP_TEMP $AC_TMP_LABELBASE -geometry +0+$band_position -composite $AC_TMP_LABELS -geometry +0+$text_position -composite "${base_file}"
     $IM_CMD -size ${badge_width}x${badge_height} xc:$BADGE_BACKGROUND_COLOR $AC_TMP_BADGE_BG
-    $IM_CMD $AC_TMP_BADGE_BG "${FONT_ARGS[@]}" -gravity center -fill $BADGE_TEXT_COLOR -pointsize $badge_point_size -annotate +0+0 "$BADGE_TEXT" $AC_TMP_BADGE
+    $IM_CMD -background none "${FONT_ARGS[@]}" -fill $BADGE_TEXT_COLOR -size ${badge_text_width}x${badge_text_height} -gravity center label:"$BADGE_TEXT" $AC_TMP_BADGE_TXT
+    $IM_CMD $AC_TMP_BADGE_BG $AC_TMP_BADGE_TXT -gravity center -composite $AC_TMP_BADGE
     $IM_CMD $AC_TMP_BADGE -background none -rotate 45 $AC_TMP_BADGE
     $IM_CMD "$base_file" $AC_TMP_BADGE -gravity SouthWest -geometry -${badge_width_offset}-${badge_height_offset} -composite "$base_file"
 
@@ -151,6 +156,7 @@ function processIcon() (
     rm $AC_TMP_TEMP
     rm $AC_TMP_BADGE
     rm $AC_TMP_BADGE_BG
+    rm $AC_TMP_BADGE_TXT
 )
 
 # Badge only the 66/108 safe zone of an adaptive foreground layer.
